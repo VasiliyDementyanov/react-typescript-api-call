@@ -1,5 +1,6 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAxiosFetch } from "../custom-hooks/useAxiosFetch";
 
 import TutorialDataService from "../services/TutorialService";
 import ITutorialData from "../types/Tutorial";
@@ -17,21 +18,29 @@ const Tutorial: React.FC = () => {
   const [currentTutorial, setCurrentTutorial] = useState<ITutorialData>(initialTutorialState);
   const [message, setMessage] = useState<string>("");
 
-  const getTutorial = (id: string) => {
-    TutorialDataService.get(id)
-      .then((response: any) => {
-        setCurrentTutorial(response.data);
-        console.log(response.data);
-      })
-      .catch((e: Error) => {
-        console.log(e);
-      });
-  };
+  const [ data, error, loading ] = useAxiosFetch({
+    method: "GET",
+    url: "/tutorials/" + id,
+  });
 
   useEffect(() => {
-    if (id)
-      getTutorial(id);
-  }, [id]);
+    if (data) {
+      setCurrentTutorial(data);
+      console.log(data);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (error) {
+      console.log(error);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (loading) {
+      console.log("getting tutorial...");
+    }
+  }, [loading]);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -84,6 +93,7 @@ const Tutorial: React.FC = () => {
       {currentTutorial ? (
         <div className="edit-form">
           <h4>Tutorial</h4>
+          { loading && <p>loading...</p>}
           <form>
             <div className="form-group">
               <label htmlFor="title">Title</label>

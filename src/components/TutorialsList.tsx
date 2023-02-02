@@ -1,5 +1,6 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
 import TutorialDataService from "../services/TutorialService";
+import { useAxiosFetch } from "../custom-hooks/useAxiosFetch";
 import { Link } from "react-router-dom";
 import ITutorialData from '../types/Tutorial';
 
@@ -9,28 +10,46 @@ const TutorialsList: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
   const [searchTitle, setSearchTitle] = useState<string>("");
 
+  const [ data, error, loading, fetchData ] = useAxiosFetch({
+    method: "GET",
+    url: "/tutorials",
+    params: {
+      title: searchTitle,
+    },
+  });
+
   useEffect(() => {
-    retrieveTutorials();
-  }, []);
+    if (data) {
+      setTutorials(data);
+      console.log(data);
+    } else {
+      setTutorials([]);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (error) {
+      console.log(error);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (loading) {
+      console.log("retrieving tutorials...");
+    }
+  }, [loading]);
 
   const onChangeSearchTitle = (e: ChangeEvent<HTMLInputElement>) => {
     const searchTitle = e.target.value;
     setSearchTitle(searchTitle);
   };
 
-  const retrieveTutorials = () => {
-    TutorialDataService.getAll()
-      .then((response: any) => {
-        setTutorials(response.data);
-        console.log(response.data);
-      })
-      .catch((e: Error) => {
-        console.log(e);
-      });
+  const findByTitle = () => {
+    fetchData();
   };
 
   const refreshList = () => {
-    retrieveTutorials();
+    fetchData();
     setCurrentTutorial(null);
     setCurrentIndex(-1);
   };
@@ -45,19 +64,6 @@ const TutorialsList: React.FC = () => {
       .then((response: any) => {
         console.log(response.data);
         refreshList();
-      })
-      .catch((e: Error) => {
-        console.log(e);
-      });
-  };
-
-  const findByTitle = () => {
-    TutorialDataService.findByTitle(searchTitle)
-      .then((response: any) => {
-        setTutorials(response.data);
-        setCurrentTutorial(null);
-        setCurrentIndex(-1);
-        console.log(response.data);
       })
       .catch((e: Error) => {
         console.log(e);
@@ -88,6 +94,8 @@ const TutorialsList: React.FC = () => {
       </div>
       <div className="col-md-6">
         <h4>Tutorials List</h4>
+
+        {loading && <p>loading...</p>}
 
         <ul className="list-group">
           {tutorials &&
